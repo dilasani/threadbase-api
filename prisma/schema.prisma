@@ -1,0 +1,87 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PostStatus {
+  active
+  archived
+  spam
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  karma     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  bio String?
+
+  posts Post[]
+  votes Vote[]
+
+  followers Follows[] @relation("UserFollowers")
+  following Follows[] @relation("UserFollowing")
+
+  @@map("users")
+}
+
+model Post {
+  id       Int    @id @default(autoincrement())
+  authorId Int    @map("author_id")
+  score    Int    @default(0)
+  status   PostStatus @default(active)  viewCount Int @default(0) @map("view_count")
+
+  author User      @relation(fields: [authorId], references: [id])
+  votes  Vote[]
+  tags   PostTag[]
+
+  @@map("posts")
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model Vote {
+  userId Int @map("user_id")
+  postId Int @map("post_id")
+  value  Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("votes")
+}
+
+model PostTag {
+  postId Int @map("post_id")
+  tagId  Int @map("tag_id")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+model Follows {
+  followerId   Int  @map("follower_id")
+  followingId  Int  @map("following_id")
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
