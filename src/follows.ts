@@ -1,3 +1,5 @@
+import { authenticateRequest } from "./auth.js";
+
 export type RelatedUser = {
   id: number;
   username: string;
@@ -48,4 +50,19 @@ export function getFollowing(
   followerId: number,
 ): Promise<RelatedUser[]> {
   return store.findFollowing(followerId);
+}
+
+
+export async function followUserWithToken(
+  store: FollowsStore,
+  authorizationHeader: string | undefined,
+  followingId: number
+): Promise<void> {
+  const authenticatedUser = authenticateRequest(authorizationHeader);
+
+  await followUser(
+    store,
+    authenticatedUser.id,
+    followingId
+  );
 }
