@@ -1,0 +1,27 @@
+
+info:
+  name: Upload File
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: http://localhost:3000/api/upload
+  headers:
+    - name: Authorization
+      value: Bearer YOUR_JWT_TOKEN
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value: []
+        contentType: application/pdf
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
