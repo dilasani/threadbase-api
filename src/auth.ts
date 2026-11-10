@@ -23,7 +23,7 @@ export type AuthUser = {
 };
 
 export type StoredUser = AuthUser & {
-  passwordHash: string;
+  passwordHash: string | null;
 };
 
 export type AuthStore = {
@@ -68,8 +68,12 @@ async function hashPassword(password: string): Promise<string> {
 
 async function verifyPassword(
   password: string,
-  encodedHash: string
+  encodedHash: string | null
 ): Promise<boolean> {
+  if (!encodedHash) {
+    return false;
+  }
+
   const [version, encodedSalt, encodedKey] = encodedHash.split("$");
 
   if (version !== PASSWORD_HASH_VERSION || !encodedSalt || !encodedKey) {
@@ -116,20 +120,7 @@ export async function register(
   };
 }
 
-export async function login(
-  store: AuthStore,
-  input: { username: string; password: string }
-): Promise<AuthSession> {
-  const user = await store.findUserByUsername(input.username.trim());
-
-  const passwordMatches = user
-    ? await verifyPassword(input.password, user.passwordHash)
-    : false;
-
-  if (!passwordMatches || !user) {
-    throw new Error("Invalid username or password");
-  }
-
+export function createAuthSession(user: AuthUser): AuthSession {
   const token = jwt.sign(
     {
       userId: user.id,
@@ -144,11 +135,28 @@ export async function login(
   return {
     token,
     expiresAt,
-    user: {
-      id: user.id,
-      username: user.username,
-    },
+    user,
   };
+}
+
+export async function login(
+  store: AuthStore,
+  input: { username: string; password: string }
+): Promise<AuthSession> {
+  const user = await store.findUserByUsername(input.username.trim());
+
+  const passwordMatches = user
+    ? await verifyPassword(input.password, user.passwordHash)
+    : false;
+
+  if (!passwordMatches || !user) {
+    throw new Error("Invalid username or password");
+  }
+
+  return createAuthSession({
+    id: user.id,
+    username: user.username,
+  });
 }
 
 export function verifyToken(token: string): AuthUser {
@@ -171,8 +179,6 @@ export function verifyToken(token: string): AuthUser {
     throw new Error("Invalid or expired token");
   }
 }
-
-
 
 export function authenticateRequest(
   authorizationHeader: string | undefined
