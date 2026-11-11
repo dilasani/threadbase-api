@@ -1,3 +1,4 @@
+
 import { authenticateRequest } from "./auth.js";
 
 export type RelatedUser = {
@@ -19,6 +20,7 @@ export async function createRelatedUser(
   if (!input.username.trim() || !input.email.includes("@")) {
     throw new Error("Username and a valid email are required");
   }
+
   return store.createUser({
     username: input.username.trim(),
     email: input.email.trim().toLowerCase(),
@@ -38,6 +40,7 @@ export async function followUser(
     store.findUserById(followerId),
     store.findUserById(followingId),
   ]);
+
   if (!follower || !following) {
     throw new Error("Both users must exist before creating a follow relationship");
   }
@@ -51,7 +54,6 @@ export function getFollowing(
 ): Promise<RelatedUser[]> {
   return store.findFollowing(followerId);
 }
-
 
 export async function followUserWithToken(
   store: FollowsStore,
